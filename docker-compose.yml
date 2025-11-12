@@ -1,0 +1,137 @@
+version: "3.9"
+
+services:
+  # 🐘 PostgreSQL
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tasknet
+
+  # 🐇 RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tasknet
+
+  # 🪵 LogService
+  logservice:
+    build:
+      context: ./LogService/LogService
+      dockerfile: Dockerfile
+    container_name: logservice
+    restart: always
+    ports:
+      - "5070:5070"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - tasknet
+
+  # 🧾 LogServiceConsumer
+  logserviceconsumer:
+    build:
+      context: ./LogServiceConsumer/LogServiceConsumer
+      dockerfile: Dockerfile
+    container_name: logserviceconsumer
+    restart: always
+    environment:
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - tasknet
+
+  # 🧩 TaskAPI
+  taskapi:
+    build:
+      context: ./TaskAPI/TaskAPI
+      dockerfile: Dockerfile
+    container_name: taskapi
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: "Development"
+      LOGSERVICE_URL: "http://logservice:5070"
+      RABBITMQ_HOST: "rabbitmq"
+      RABBITMQ_PORT: "5672"
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=taskdb;Username=postgres;Password=postgres"
+      OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      logservice:
+        condition: service_started
+      otel-collector:
+        condition: service_started
+    networks:
+      - tasknet
+
+  # 🧠 OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector:0.104.0
+    container_name: otel-collector
+    restart: always
+    command: ["--config=/etc/otel/config.yaml"]
+    volumes:
+      - ./otel-config.yaml:/etc/otel/config.yaml
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+    networks:
+      - tasknet
+
+  # 🔍 Jaeger — просмотр трассировок
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: jaeger
+    restart: always
+    ports:
+      - "16686:16686" # Web UI
+      - "14268:14268"
+      - "14250:14250"
+    networks:
+      - tasknet
+
+networks:
+  tasknet:
+    driver: bridge
+
+volumes:
+  pgdata:

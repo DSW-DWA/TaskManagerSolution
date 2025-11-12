@@ -1,0 +1,37 @@
+# Visual Studio / Rider
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Build artifacts
+bin/
+obj/
+out/
+artifacts/
+
+# Logs
+*.log
+logs/
+
+# Docker
+**/Dockerfile.*
+**/Dockerfile.local
+docker-compose.override.yml
+
+# Environment
+.env
+.env.*
+
+# Coverage / Tests
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# OS files
+.DS_Store
+Thumbs.db

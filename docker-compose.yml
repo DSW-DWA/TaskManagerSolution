@@ -1,7 +1,6 @@
 version: "3.9"
 
 services:
-  # 🐘 PostgreSQL
   postgres:
     image: postgres:16
     container_name: postgres
@@ -22,7 +21,6 @@ services:
     networks:
       - tasknet
 
-  # 🐇 RabbitMQ
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -42,7 +40,6 @@ services:
     networks:
       - tasknet
 
-  # 🪵 LogService
   logservice:
     build:
       context: ./LogService/LogService
@@ -59,7 +56,6 @@ services:
     networks:
       - tasknet
 
-  # 🧾 LogServiceConsumer
   logserviceconsumer:
     build:
       context: ./LogServiceConsumer/LogServiceConsumer
@@ -75,7 +71,6 @@ services:
     networks:
       - tasknet
 
-  # 🧩 TaskAPI
   taskapi:
     build:
       context: ./TaskAPI/TaskAPI
@@ -103,7 +98,6 @@ services:
     networks:
       - tasknet
 
-  # 🧠 OpenTelemetry Collector
   otel-collector:
     image: otel/opentelemetry-collector:0.104.0
     container_name: otel-collector
@@ -117,7 +111,6 @@ services:
     networks:
       - tasknet
 
-  # 🔍 Jaeger — просмотр трассировок
   jaeger:
     image: jaegertracing/all-in-one:1.57
     container_name: jaeger

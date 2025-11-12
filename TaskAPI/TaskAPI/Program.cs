@@ -61,7 +61,7 @@ builder.Services.AddOpenTelemetry()
 
         t.AddOtlpExporter(opt =>
         {
-            opt.Endpoint = new Uri("http://otel-collector:4317");
+            opt.Endpoint = new Uri(Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT"));
         });
     });
 

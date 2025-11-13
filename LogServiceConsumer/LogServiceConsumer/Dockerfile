@@ -7,7 +7,6 @@ RUN dotnet restore
 COPY . ./
 RUN dotnet publish -c Release -o /app/publish
 
-# ✅ Используем aspnet runtime, а не чистый runtime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
